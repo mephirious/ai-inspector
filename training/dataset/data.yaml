@@ -1,0 +1,14 @@
+# YOLO11 Dataset Configuration
+# Generated for Digital Inspector
+
+train: /home/mephirious/Projects/ai-inspector/training/dataset/images/train
+val: /home/mephirious/Projects/ai-inspector/training/dataset/images/val
+
+# Number of classes
+nc: 3
+
+# Class names
+names:
+  0: signature
+  1: stamp
+  2: qr

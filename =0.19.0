@@ -1,0 +1,32 @@
+Collecting huggingface_hub
+  Downloading huggingface_hub-1.1.4-py3-none-any.whl (515 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 515.6/515.6 KB 253.3 kB/s eta 0:00:00
+Collecting hf-xet<2.0.0,>=1.2.0
+  Downloading hf_xet-1.2.0-cp37-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (3.3 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.3/3.3 MB 457.6 kB/s eta 0:00:00
+Requirement already satisfied: tqdm>=4.42.1 in ./venv/lib/python3.10/site-packages (from huggingface_hub) (4.67.1)
+Requirement already satisfied: pyyaml>=5.1 in ./venv/lib/python3.10/site-packages (from huggingface_hub) (6.0.3)
+Requirement already satisfied: packaging>=20.9 in ./venv/lib/python3.10/site-packages (from huggingface_hub) (25.0)
+Requirement already satisfied: fsspec>=2023.5.0 in ./venv/lib/python3.10/site-packages (from huggingface_hub) (2025.10.0)
+Requirement already satisfied: typing-extensions>=3.7.4.3 in ./venv/lib/python3.10/site-packages (from huggingface_hub) (4.15.0)
+Requirement already satisfied: filelock in ./venv/lib/python3.10/site-packages (from huggingface_hub) (3.20.0)
+Collecting httpx<1,>=0.23.0
+  Downloading httpx-0.28.1-py3-none-any.whl (73 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 73.5/73.5 KB 933.9 kB/s eta 0:00:00
+Collecting typer-slim
+  Downloading typer_slim-0.20.0-py3-none-any.whl (47 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 47.1/47.1 KB 1.3 MB/s eta 0:00:00
+Collecting shellingham
+  Downloading shellingham-1.5.4-py2.py3-none-any.whl (9.8 kB)
+Requirement already satisfied: certifi in ./venv/lib/python3.10/site-packages (from httpx<1,>=0.23.0->huggingface_hub) (2025.11.12)
+Requirement already satisfied: idna in ./venv/lib/python3.10/site-packages (from httpx<1,>=0.23.0->huggingface_hub) (3.11)
+Requirement already satisfied: anyio in ./venv/lib/python3.10/site-packages (from httpx<1,>=0.23.0->huggingface_hub) (4.11.0)
+Collecting httpcore==1.*
+  Downloading httpcore-1.0.9-py3-none-any.whl (78 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 78.8/78.8 KB 910.3 kB/s eta 0:00:00
+Requirement already satisfied: h11>=0.16 in ./venv/lib/python3.10/site-packages (from httpcore==1.*->httpx<1,>=0.23.0->huggingface_hub) (0.16.0)
+Requirement already satisfied: click>=8.0.0 in ./venv/lib/python3.10/site-packages (from typer-slim->huggingface_hub) (8.3.0)
+Requirement already satisfied: sniffio>=1.1 in ./venv/lib/python3.10/site-packages (from anyio->httpx<1,>=0.23.0->huggingface_hub) (1.3.1)
+Requirement already satisfied: exceptiongroup>=1.0.2 in ./venv/lib/python3.10/site-packages (from anyio->httpx<1,>=0.23.0->huggingface_hub) (1.3.0)
+Installing collected packages: typer-slim, shellingham, httpcore, hf-xet, httpx, huggingface_hub
+Successfully installed hf-xet-1.2.0 httpcore-1.0.9 httpx-0.28.1 huggingface_hub-1.1.4 shellingham-1.5.4 typer-slim-0.20.0
