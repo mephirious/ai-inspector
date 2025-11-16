@@ -4,61 +4,50 @@ __pycache__/
 *$py.class
 *.so
 .Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-
-# Virtual Environment
 venv/
 env/
 ENV/
 .venv
+*.egg-info/
+dist/
+build/
+
+# Outputs
+output/
+results/
+*.png
+*.jpg
+*.jpeg
+
+# Training
+training/runs/
+training/datasets/
+*.cache
 
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
-*~
-
-# Output files
-output/
-*.pdf
-*.png
-*.jpg
-*.jpeg
-
-# Model cache
-.cache/
-models/
-*.pt
-*.onnx
-
-# Logs
-*.log
-logs/
 
 # OS
 .DS_Store
 Thumbs.db
 
-# Temporary files
-*.tmp
-temp/
-tmp/
-
-# Environment variables
+# Environment
 .env
+.env.local
 
+# React
+frontend/node_modules/
+frontend/build/
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

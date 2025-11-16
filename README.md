@@ -1,418 +1,201 @@
-# Digital Inspector 🕵️
+# Hybrid Document Detector Web Service
 
-**AI-powered document inspection system for detecting signatures, QR codes, and stamps/seals in construction PDFs and images.**
+A production-ready web application for detecting signatures, stamps, and QR codes in PDFs and images using a 3-model hybrid YOLO detector.
 
-Built for the Armeta AI Hackathon with a focus on accuracy, speed, and scalability.
+## Features
 
----
+- **Web Interface**: Upload PDFs or images with drag-and-drop support
+- **Real-time Detection**: Process documents with 3 YOLO models (signature, stamp, QR)
+- **Interactive Preview**: View annotated pages with bounding boxes
+- **Category Toggles**: Show/hide specific detection categories
+- **Export Options**: Download results as JSON or annotated images (ZIP)
+- **RESTful API**: Full FastAPI backend with proper endpoints
 
-## 🎯 Overview
-
-Digital Inspector is a production-ready system that automatically detects and extracts:
-- **Signatures** using YOLOv8 signature detection model
-- **QR Codes** using qrdet with pyzbar decoding
-- **Stamps/Seals** using YOLOv8 barcode detection model
-
-The system processes PDFs and images at scale (1000+ documents), providing JSON outputs and annotated visualizations.
-
----
-
-## ✨ Features
-
-- **Multi-Detector Pipeline**: Three specialized AI models working in parallel
-- **PDF & Image Support**: Handles both multi-page PDFs and single images
-- **Fast Processing**: Optimized for speed with GPU acceleration support
-- **Clean Architecture**: Modular, scalable, and maintainable codebase
-- **REST API**: FastAPI backend with async processing
-- **CLI Interface**: Command-line tool for batch processing
-- **Visualization**: Color-coded bounding boxes on annotated images
-- **Smart Merging**: Automatic deduplication and coordinate normalization
-
----
-
-## 🏗️ Architecture
+## Project Structure
 
 ```
-digital_inspector/
-├── detectors/          # AI detection models
-│   ├── signature_detector.py
-│   ├── qr_detector.py
-│   └── stamp_detector.py
-├── utils/              # Processing utilities
-│   ├── pdf_utils.py
-│   ├── image_utils.py
-│   ├── bbox_utils.py
-│   ├── merge_utils.py
-│   └── viz_utils.py
-└── api/                # FastAPI backend
-    ├── main.py
-    └── schemas.py
+.
+├── backend/
+│   ├── detector/
+│   │   └── hybrid_detector.py    # Core detection logic (3-model hybrid)
+│   ├── utils/
+│   │   ├── pdf.py                # PDF to image conversion
+│   │   └── images.py             # Image processing utilities
+│   ├── schemas.py                # Pydantic models for API
+│   └── main.py                   # FastAPI application
+├── frontend/
+│   ├── index.html                # Main HTML page
+│   ├── app.js                    # Frontend JavaScript logic
+│   └── styles.css                # Modern CSS styling
+├── requirements.txt              # Python dependencies
+└── README.md                     # This file
 ```
 
----
-
-## 📦 Installation
+## Installation
 
 ### Prerequisites
 
-1. **Python 3.8+**
-2. **System dependencies** (Linux):
-   ```bash
-   sudo apt-get update
-   sudo apt-get install poppler-utils libzbar0
-   ```
+- Python 3.10 or higher
+- CUDA-capable GPU (optional, for faster inference)
 
-   (macOS):
-   ```bash
-   brew install poppler zbar
-   ```
+### Setup
 
-### Install Python Dependencies
+1. **Clone or navigate to the project directory**
 
+2. **Create a virtual environment** (recommended):
 ```bash
-# Clone or navigate to project directory
-cd ai-inspector
-
-# Create virtual environment (recommended)
-python -m venv venv
+python3 -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
+```
 
-# Install dependencies
+3. **Install Python dependencies**:
+```bash
 pip install -r requirements.txt
 ```
 
-### Verify Installation
+4. **Ensure model files are in place**:
+   - `qr.pt` - QR code detection model
+   - `stamp.pt` - Stamp detection model
+   - `signature_best.pt` - Signature detection model
+
+   Update paths in `backend/detector/hybrid_detector.py` if models are located elsewhere.
+
+## Usage
+
+### Starting the Server
 
 ```bash
-python -c "from digital_inspector.detectors import SignatureDetector; print('✓ Installation successful')"
-```
-
----
-
-## 🚀 Quick Start
-
-### CLI Usage
-
-**Process a PDF:**
-```bash
-python run.py --pdf document.pdf --output results/
-```
-
-**Process an image:**
-```bash
-python run.py --pdf image.jpg --output results/
-```
-
-**With custom thresholds:**
-```bash
-python run.py --pdf document.pdf --output results/ \
-  --threshold-signature 0.5 \
-  --threshold-qr 0.4 \
-  --threshold-stamp 0.3
-```
-
-**Use GPU (if available):**
-```bash
-python run.py --pdf document.pdf --output results/ --device cuda
-```
-
-**CLI Options:**
-- `--pdf`: Path to input PDF or image (required)
-- `--output`: Output directory (default: `output`)
-- `--threshold-signature`: Confidence threshold for signatures (default: 0.25)
-- `--threshold-qr`: Confidence threshold for QR codes (default: 0.3)
-- `--threshold-stamp`: Confidence threshold for stamps (default: 0.25)
-- `--device`: Device to use (`auto`, `cpu`, or `cuda`)
-- `--save-json`: Save JSON results (default: True)
-- `--save-images`: Save annotated images (default: True)
-
-### API Usage
-
-**Start the server:**
-```bash
-cd digital_inspector/api
+cd backend
 python main.py
-# Or: uvicorn digital_inspector.api.main:app --host 0.0.0.0 --port 8000
 ```
 
-**API Endpoints:**
+Or using uvicorn directly:
+```bash
+cd backend
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+```
 
-1. **Health Check:**
-   ```bash
-   curl http://localhost:8000/health
-   ```
+Or from the project root:
+```bash
+uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
+```
 
-2. **Detect in Document:**
-   ```bash
-   curl -X POST "http://localhost:8000/detect" \
-     -F "file=@document.pdf" \
-     -F "device=auto" \
-     -F "save_images=true"
-   ```
+The web interface will be available at: `http://localhost:8000`
 
-3. **Python Client Example:**
-   ```python
-   import requests
-   
-   with open('document.pdf', 'rb') as f:
-       response = requests.post(
-           'http://localhost:8000/detect',
-           files={'file': f},
-           data={'device': 'auto', 'save_images': 'true'}
-       )
-   
-   result = response.json()
-   print(f"Found {sum(len(r['detections']) for r in result['results'])} detections")
-   ```
+### API Endpoints
 
----
+#### POST `/detect`
+Upload a PDF or image file for detection.
 
-## 📊 Output Format
+**Request:**
+- `file`: PDF or image file (multipart/form-data)
 
-### JSON Output Schema
-
+**Response:**
 ```json
 {
-  "document_name": "construction_doc",
-  "page_number": 1,
-  "page_size": {
-    "width": 2480,
-    "height": 3508
-  },
-  "detections": [
-    {
-      "category": "signature",
-      "bbox": [0.15, 0.85, 0.25, 0.10],
-      "confidence": 0.95,
-      "data": null
-    },
-    {
-      "category": "qr",
-      "bbox": [0.70, 0.90, 0.15, 0.08],
-      "confidence": 0.92,
-      "data": "https://example.com/verify"
-    },
-    {
-      "category": "stamp",
-      "bbox": [0.80, 0.10, 0.15, 0.12],
-      "confidence": 0.88,
-      "data": null
+  "document_id": "uuid-string",
+  "document_name": "document.pdf",
+  "results": {
+    "document.pdf": {
+      "page_1": {
+        "annotations": {
+          "annotation_001": {
+            "category": "signature",
+            "bbox": {"x": 510, "y": 146, "width": 250, "height": 98.89},
+            "area": 24722.5,
+            "confidence": 0.95
+          }
+        },
+        "page_size": {"width": 1684, "height": 1190}
+      }
     }
-  ]
+  }
 }
 ```
 
-**Bounding Box Format:**
-- `bbox`: `[x, y, width, height]` normalized to `[0, 1]` relative to page size
-- Coordinates are top-left origin: `x` and `y` are the top-left corner
+#### GET `/download/json/{doc_id}`
+Download detection results as JSON file.
 
-### Visual Output
+#### GET `/download/zip/{doc_id}`
+Download annotated images as ZIP file.
 
-Annotated images are saved with color-coded bounding boxes:
-- 🔵 **Blue**: Signatures
-- 🟢 **Green**: QR codes
-- 🔴 **Red**: Stamps/seals
+### Using the Web Interface
 
-Output location: `output/{document_name}/page_{N}_annotated.png`
+1. **Upload**: Click the upload area or drag-and-drop a PDF/image file
+2. **Process**: Click "Process Document" button
+3. **View Results**: 
+   - See annotated pages with bounding boxes
+   - Toggle categories (signature/stamp/QR) to show/hide
+   - View detection details in the annotations list
+4. **Download**: 
+   - Click "Download JSON" for structured results
+   - Click "Download ZIP" for annotated images
 
----
+## Detection Logic
 
-## 🔍 Detector Details
+The system uses a hybrid approach with 3 YOLO models:
 
-### 1. Signature Detector
-- **Model**: `obazl/yolov8-signature-detection` (HuggingFace)
-- **Technology**: YOLOv8 (You Only Look Once)
-- **Purpose**: Detects handwritten and digital signatures
-- **Output**: Bounding boxes with confidence scores
+1. **QR Model** (`qr.pt`): Detects QR codes at 640px
+2. **Stamp Model** (`stamp.pt`): Detects stamps (class 15) at 640px
+3. **Signature Model** (`signature_best.pt`): Detects signatures at 640px and 1024px
 
-### 2. QR Code Detector
-- **Model**: `Eric-Canas/qrdet` (GitHub/PyPI)
-- **Decoder**: `pyzbar` for QR code data extraction
-- **Purpose**: Detects and decodes QR codes
-- **Output**: Bounding boxes + decoded data (when available)
+All detections are merged using IoU threshold (0.5) to eliminate duplicates, keeping the highest confidence detection within each category.
 
-### 3. Stamp/Seal Detector
-- **Model**: `Piero2411/YOLOV8s-Barcode-Detection` (HuggingFace)
-- **Technology**: YOLOv8 adapted for barcode/stamp detection
-- **Purpose**: Detects official stamps, seals, and barcodes
-- **Output**: Bounding boxes with confidence scores
+## Configuration
 
----
+Detection parameters can be adjusted in `backend/detector/hybrid_detector.py`:
 
-## ⚡ Performance Optimization
+- `QR_CONF = 0.5` - QR detection confidence threshold
+- `STAMP_CONF = 0.1` - Stamp detection confidence threshold
+- `SIGNATURE_CONF = 0.1` - Signature detection confidence threshold
+- `MERGE_IOU = 0.5` - IoU threshold for merging detections
 
-### Speed Optimizations
-- **Parallel Detection**: All three detectors run independently
-- **GPU Acceleration**: Automatic CUDA detection when available
-- **Efficient PDF Processing**: 300-400 DPI for optimal speed/quality balance
-- **Batch Processing**: Multi-page PDFs processed sequentially with minimal overhead
+## Storage
 
-### Accuracy Optimizations
-- **Smart Merging**: IoU-based deduplication prevents duplicate detections
-- **Coordinate Normalization**: Consistent bbox format across all detectors
-- **Confidence Thresholding**: Configurable per-detector thresholds
+Temporary files are stored in `/tmp/detector_storage/{document_id}/`:
+- Original uploaded file
+- Annotated images (per page)
+- Results JSON
 
-### Scalability
-- **Memory Efficient**: Processes pages one at a time for large PDFs
-- **Async API**: FastAPI with async/await for concurrent requests
-- **Modular Design**: Easy to add new detectors or modify existing ones
+Files are kept for download but can be cleaned up periodically.
 
----
+## Development
 
-## 🎯 Hackathon Alignment
+### Code Structure
 
-### Evaluation Criteria Coverage
+- **Modular Design**: Detector logic is separated from API and utilities
+- **Type Hints**: Full type annotations throughout
+- **Error Handling**: Comprehensive error handling with proper HTTP status codes
+- **Pydantic Models**: Type-safe API schemas
 
-1. **✅ Accuracy & Reliability**
-   - Three specialized models for different detection tasks
-   - Confidence thresholding and smart merging
-   - Validated against real construction documents
+### Adding Features
 
-2. **✅ Speed & Optimization**
-   - GPU acceleration support
-   - Efficient PDF processing pipeline
-   - Optimized for 1000+ document processing
+- New detection categories: Modify `HybridDetector3Models` class
+- Additional file formats: Extend `utils/images.py` and `utils/pdf.py`
+- Custom endpoints: Add routes in `backend/main.py`
 
-3. **✅ Technical Complexity & Clean Architecture**
-   - Modular, maintainable codebase
-   - Separation of concerns (detectors, utils, API)
-   - Production-ready error handling
+## Troubleshooting
 
-4. **✅ Presentation Quality**
-   - Clear JSON output schema
-   - Visual annotations with color coding
-   - Comprehensive documentation
+### PDF Processing Issues
+- Ensure `poppler` is installed and in PATH
+- Check PDF file is not corrupted or password-protected
 
-5. **✅ Vision & Scalability**
-   - Easy to extend with new detectors
-   - API-first design for integration
-   - Future-ready architecture (ONNX support planned)
+### Model Loading Errors
+- Verify model file paths in `hybrid_detector.py`
+- Ensure models are compatible with ultralytics version
 
----
+### GPU Not Detected
+- Install CUDA-compatible PyTorch version
+- Check CUDA installation: `nvidia-smi`
 
-## 🎓 Model Training (YOLO11 Fine-Tuning)
+## License
 
-### Training Your Own Model
+This project maintains the original detection logic and wraps it in a production-ready web service.
 
-We provide a complete training pipeline for fine-tuning YOLO11s on your construction documents:
+## Support
 
-**1. Convert Dataset:**
-```bash
-python training/convert_dataset.py
-```
-
-**2. Train Model:**
-```bash
-python training/train_yolo11.py
-```
-
-**3. Use Fine-Tuned Model:**
-```bash
-python run.py --pdf document.pdf --output results/ --model training/runs/yolo11_finetuned/weights/best.pt
-```
-
-See `training/README.md` for detailed instructions.
-
-### Training Dataset
-
-- **45 construction PDFs** with annotations
-- **3 classes**: signature, stamp, qr
-- **80/20 train/val split**
-- **YOLO11s model** (best speed/accuracy trade-off)
-
----
-
-## 🔮 Future Improvements
-
-### Short-term
-- [x] YOLO11 fine-tuning pipeline
-- [ ] ONNX Runtime integration for faster inference
-- [ ] Batch processing for multiple documents
-- [ ] Docker containerization
-
-### Long-term
-- [ ] Web UI for interactive document inspection
-- [ ] Database integration for result storage
-- [ ] Real-time processing pipeline
-- [ ] Multi-GPU support for large-scale processing
-- [ ] Custom model training pipeline
-
----
-
-## 🐛 Troubleshooting
-
-### Common Issues
-
-**1. Model download fails (401/Gated Repository):**
-```bash
-# Some models require HuggingFace authentication
-# Option 1: Set environment variable
-export HF_TOKEN=your_huggingface_token_here
-
-# Option 2: Use CLI argument
-python run.py --pdf document.pdf --output results/ --hf-token your_token
-
-# Option 3: Login via CLI
-huggingface-cli login
-
-# Get your token from: https://huggingface.co/settings/tokens
-# Request access to gated models at their HuggingFace pages:
-# - https://huggingface.co/obazl/yolov8-signature-detection
-```
-
-**2. Model download fails (general):**
-```bash
-# Models are downloaded automatically on first use
-# Ensure internet connection and sufficient disk space
-```
-
-**3. PDF conversion fails:**
-```bash
-# Install poppler-utils
-sudo apt-get install poppler-utils  # Linux
-brew install poppler  # macOS
-```
-
-**4. QR code decoding fails:**
-```bash
-# Install zbar library
-sudo apt-get install libzbar0  # Linux
-brew install zbar  # macOS
-```
-
-**5. CUDA/GPU not detected:**
-```bash
-# Verify PyTorch CUDA installation
-python -c "import torch; print(torch.cuda.is_available())"
-# Reinstall with CUDA support if needed
-pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118
-```
-
----
-
-## 📝 License
-
-This project is built for the Armeta AI Hackathon. Please refer to individual model licenses:
-- YOLOv8 models: AGPL-3.0
-- qrdet: MIT
-- Other dependencies: See respective licenses
-
----
-
-## 🙏 Acknowledgments
-
-- **obazl** for the signature detection model (https://huggingface.co/obazl/yolov8-signature-detection)
-- **Eric-Canas** for the qrdet library
-- **Piero2411** for the barcode detection model
-- **Ultralytics** for YOLOv8 framework
-
----
-
-## 📧 Contact
-
-For questions or issues, please open an issue on the project repository.
-
----
-
-**Built with ❤️ for the Armeta AI Hackathon**
+For issues or questions, please check:
+- Model compatibility with ultralytics
+- System dependencies (poppler, CUDA)
+- File format support
 

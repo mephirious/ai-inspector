@@ -1,35 +1,11 @@
-# Core dependencies
-fastapi>=0.104.0
-uvicorn[standard]>=0.24.0
-pydantic>=2.0.0
-python-multipart>=0.0.6
-
-# Computer Vision & ML
-ultralytics>=8.0.0  # Supports YOLO11
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-multipart==0.0.6
+pydantic==2.5.0
+opencv-python==4.8.1.78
+numpy==1.24.3
 torch>=2.0.0
-torchvision>=0.15.0
-opencv-python>=4.8.0
-Pillow>=10.0.0
-numpy>=1.24.0
-tqdm>=4.65.0  # Progress bars for dataset conversion
-
-# PDF processing
-pdf2image>=1.16.0
-PyPDF2>=3.0.0
-
-# QR code detection & decoding
-qrdet>=1.0.0
-pyzbar>=0.1.9
-
-# Model downloading
-huggingface_hub>=0.19.0
-python-dotenv>=1.0.0
-
-# Optional: ONNX Runtime for optimization
-# onnxruntime>=1.16.0
-# onnxruntime-gpu>=1.16.0  # Use this if you have GPU
-
-# System dependencies (install separately if needed):
-# - poppler-utils (for pdf2image on Linux: sudo apt-get install poppler-utils)
-# - zbar (for pyzbar on Linux: sudo apt-get install libzbar0)
+ultralytics>=8.0.0
+pdf2image==1.16.3
+Pillow==10.1.0
 
