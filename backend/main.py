@@ -131,133 +131,151 @@ async def root():
     return {"message": "Hybrid Document Detector API", "version": "1.0.0"}
 
 
-@app.post("/detect", response_model=DetectionResponse)
-async def detect_document(file: UploadFile = File(...)):
+@app.post("/detect")
+async def detect_document(
+    files: List[UploadFile] = File(...),
+):
     """
-    Detect signatures, stamps, and QR codes in uploaded PDF or image.
+    Detect signatures, stamps, and QR codes in uploaded PDFs or images (multi-upload).
     
     Returns:
-        DetectionResponse with annotations for all pages
+        JSON object in the specified model output format:
+        {
+          "document.pdf": {
+            "page_1": {
+              "page_size": {"width": W, "height": H},
+              "annotations": [ { "annotation_001": {...}}, ... ]
+            }
+          }
+        }
     """
     try:
         # Generate unique document ID
         doc_id = str(uuid.uuid4())
         doc_dir = STORAGE_DIR / doc_id
         doc_dir.mkdir(parents=True, exist_ok=True)
-        
-        # Save uploaded file
-        file_path = doc_dir / file.filename
-        with open(file_path, "wb") as f:
-            content = await file.read()
-            f.write(content)
-        
-        # Process file
+
         detector = get_detector()
-        results = {}
-        pages_data = {}
-        
-        if is_pdf_file(file.filename):
-            # Process PDF
-            print(f"Processing PDF: {file.filename}")
-            pdf_images = pdf_to_images(str(file_path))
-            
-            for page_idx, (img, (width, height)) in enumerate(pdf_images, start=1):
-                page_id = f"page_{page_idx}"
-                
-                # Save original image
-                original_path = doc_dir / f"{page_id}_original.jpg"
-                save_image(img, original_path)
-                
-                # Run detection
-                detections = detector.detect(img)
-                
-                # Convert to annotation format
-                annotations = process_detections(detections, width, height)
-                
-                # Create annotated image
-                annotated_img = detector.annotate_image(img, detections)
-                annotated_path = doc_dir / f"{page_id}_annotated.jpg"
-                save_image(annotated_img, annotated_path)
-                
-                # Store page data
-                pages_data[page_id] = PageAnnotations(
-                    annotations=annotations,
-                    page_size=PageSize(width=width, height=height)
-                )
-            
-            results[file.filename] = pages_data
-        
-        elif is_image_file(file.filename):
-            # Process single image
-            print(f"Processing image: {file.filename}")
-            img, (width, height) = read_image(file_path)
-            
-            # Save original image
-            original_path = doc_dir / "page_1_original.jpg"
-            save_image(img, original_path)
-            
-            # Run detection
-            detections = detector.detect(img)
-            
-            # Convert to annotation format
-            annotations = process_detections(detections, width, height)
-            
-            # Create annotated image
-            annotated_img = detector.annotate_image(img, detections)
-            annotated_path = doc_dir / "page_1_annotated.jpg"
-            save_image(annotated_img, annotated_path)
-            
-            # Store page data
-            pages_data["page_1"] = PageAnnotations(
-                annotations=annotations,
-                page_size=PageSize(width=width, height=height)
-            )
-            
-            results[file.filename] = pages_data
-        
-        else:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Unsupported file type: {file.filename}. Supported: PDF, JPG, PNG, etc."
-            )
-        
-        # Save results JSON
-        import json
-        json_path = doc_dir / "results.json"
-        with open(json_path, "w", encoding="utf-8") as f:
-            # Convert Pydantic models to dict for JSON serialization
-            json_data = {
-                file.filename: {
-                    page_id: {
-                        "annotations": {
-                            ann_id: {
+
+        # Combined results across all uploaded files
+        combined_results: Dict[str, Dict] = {}
+
+        for upload in files:
+            # Save each uploaded file
+            upload_path = doc_dir / upload.filename
+            with open(upload_path, "wb") as f:
+                content = await upload.read()
+                f.write(content)
+
+            document_pages: Dict[str, Dict] = {}
+            # Continuous annotation counter per document (starts from 1)
+            ann_counter: int = 1
+
+            if is_pdf_file(upload.filename):
+                print(f"Processing PDF: {upload.filename}")
+                pdf_images = pdf_to_images(str(upload_path))
+
+                for page_idx, (img, (width, height)) in enumerate(pdf_images, start=1):
+                    page_id = f"page_{page_idx}"
+
+                    # Run detection
+                    detections = detector.detect(img)
+
+                    # Convert to annotation format (dict id -> Annotation)
+                    ann_dict = process_detections(detections, width, height)
+
+                    # Build annotations array without score; use continuous IDs
+                    annotations_array = []
+                    for _, ann in ann_dict.items():
+                        ann_id_str = f"annotation_{ann_counter:03d}"
+                        annotations_array.append({
+                            ann_id_str: {
                                 "category": ann.category,
                                 "bbox": {
                                     "x": ann.bbox.x,
                                     "y": ann.bbox.y,
                                     "width": ann.bbox.width,
-                                    "height": ann.bbox.height
+                                    "height": ann.bbox.height,
                                 },
-                                "area": ann.area,
-                                "confidence": ann.confidence
+                                "area": ann.area
                             }
-                            for ann_id, ann in page.annotations.items()
-                        },
-                        "page_size": {
-                            "width": page.page_size.width,
-                            "height": page.page_size.height
-                        }
+                        })
+                        ann_counter += 1
+
+                    # Skip pages with no annotations
+                    if len(annotations_array) == 0:
+                        continue
+
+                    # Save original and annotated images
+                    original_path = doc_dir / f"{page_id}_original.jpg"
+                    save_image(img, original_path)
+                    annotated_img = detector.annotate_image(img, detections)
+                    annotated_path = doc_dir / f"{page_id}_annotated.jpg"
+                    save_image(annotated_img, annotated_path)
+
+                    # Store page data
+                    document_pages[page_id] = {
+                        "page_size": {"width": width, "height": height},
+                        "annotations": annotations_array,
                     }
-                    for page_id, page in pages_data.items()
-                }
-            }
-            json.dump(json_data, f, indent=2, ensure_ascii=False)
-        
-        return DetectionResponse(
-            document_id=doc_id,
-            document_name=file.filename,
-            results=results
-        )
+
+            elif is_image_file(upload.filename):
+                print(f"Processing image: {upload.filename}")
+                img, (width, height) = read_image(upload_path)
+
+                page_id = "page_1"
+                detections = detector.detect(img)
+                ann_dict = process_detections(detections, width, height)
+                annotations_array = []
+                for _, ann in ann_dict.items():
+                    ann_id_str = f"annotation_{ann_counter:03d}"
+                    annotations_array.append({
+                        ann_id_str: {
+                            "category": ann.category,
+                            "bbox": {
+                                "x": ann.bbox.x,
+                                "y": ann.bbox.y,
+                                "width": ann.bbox.width,
+                                "height": ann.bbox.height,
+                            },
+                            "area": ann.area
+                        }
+                    })
+                    ann_counter += 1
+
+                # Skip page if no annotations
+                if len(annotations_array) > 0:
+                    original_path = doc_dir / f"{page_id}_original.jpg"
+                    save_image(img, original_path)
+                    annotated_img = detector.annotate_image(img, detections)
+                    annotated_path = doc_dir / f"{page_id}_annotated.jpg"
+                    save_image(annotated_img, annotated_path)
+
+                    document_pages[page_id] = {
+                        "page_size": {"width": width, "height": height},
+                        "annotations": annotations_array,
+                    }
+
+            else:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Unsupported file type: {upload.filename}. Supported: PDF, JPG, PNG, etc.",
+                )
+
+            if document_pages:
+                combined_results[upload.filename] = document_pages
+
+        # Persist combined JSON with Unicode preserved
+        import json
+        json_path = doc_dir / "results.json"
+        with open(json_path, "w", encoding="utf-8") as f:
+            json.dump(combined_results, f, indent=2, ensure_ascii=False)
+
+        # Return JSON in required format with document id
+        return {
+            "document_id": doc_id,
+            "results": combined_results,
+        }
     
     except Exception as e:
         print(f"Error in detect endpoint: {e}")

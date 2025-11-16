@@ -3,21 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hybrid Document Detector</title>
+    <title>Document Inspector</title>
     <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
     <div class="container">
-        <header>
-            <h1>🔍 Hybrid Document Detector</h1>
-            <p class="subtitle">Detect signatures, stamps, and QR codes in PDFs and images</p>
+        <header class="app-header">
+            <h1>🔍 Document Inspector</h1>
+            <p class="subtitle">Multi-upload, page filtering, and detections viewer</p>
         </header>
 
-        <main>
+        <main class="app-main">
             <!-- Upload Section -->
             <section class="upload-section">
                 <div class="upload-area" id="uploadArea">
-                    <input type="file" id="fileInput" accept=".pdf,.jpg,.jpeg,.png,.bmp,.tiff,.tif,.webp" hidden>
+                    <input type="file" id="fileInput" accept=".pdf,.jpg,.jpeg,.png,.bmp,.tiff,.tif,.webp" multiple hidden>
                     <div class="upload-content">
                         <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -25,10 +25,10 @@
                             <line x1="12" y1="3" x2="12" y2="15"></line>
                         </svg>
                         <p class="upload-text">Click to upload or drag and drop</p>
-                        <p class="upload-hint">PDF, JPG, PNG, or other image formats</p>
+                        <p class="upload-hint">PDF, JPG, PNG. Multiple files supported.</p>
                     </div>
                 </div>
-                <button id="uploadBtn" class="btn btn-primary" disabled>Process Document</button>
+                <button id="uploadBtn" class="btn btn-primary" disabled>Process Files</button>
             </section>
 
             <!-- Loading Indicator -->
@@ -39,32 +39,53 @@
 
             <!-- Results Section -->
             <section id="resultsSection" class="results-section hidden">
-                <div class="results-header">
-                    <h2>Detection Results</h2>
-                    <div class="controls">
-                        <div class="toggle-group">
-                            <label class="toggle-label">
-                                <input type="checkbox" id="toggleSignature" checked>
-                                <span>Signatures</span>
-                            </label>
-                            <label class="toggle-label">
-                                <input type="checkbox" id="toggleStamp" checked>
-                                <span>Stamps</span>
-                            </label>
-                            <label class="toggle-label">
-                                <input type="checkbox" id="toggleQR" checked>
-                                <span>QR Codes</span>
-                            </label>
-                        </div>
-                        <div class="download-buttons">
-                            <button id="downloadJsonBtn" class="btn btn-secondary">Download JSON</button>
-                            <button id="downloadZipBtn" class="btn btn-secondary">Download ZIP</button>
-                        </div>
-                    </div>
-                </div>
+                <div class="layout">
+                    <!-- Sidebar: files -->
+                    <aside class="sidebar" id="fileList"></aside>
 
-                <div id="pagesContainer" class="pages-container">
-                    <!-- Pages will be inserted here -->
+                    <!-- Center: page preview and navigation -->
+                    <section class="viewer">
+                        <div class="viewer-header">
+                            <div class="doc-title" id="docTitle">Select a document</div>
+                            <div class="nav-controls">
+                                <button id="prevPageBtn" class="btn btn-secondary">Prev</button>
+                                <span id="pageIndicator">-/-</span>
+                                <button id="nextPageBtn" class="btn btn-secondary">Next</button>
+                            </div>
+                            <div class="download-buttons">
+                                <button id="downloadJsonBtn" class="btn btn-secondary">Download JSON</button>
+                                <button id="downloadZipBtn" class="btn btn-secondary">Download ZIP</button>
+                            </div>
+                        </div>
+                        <div class="canvas-container">
+                            <div class="image-wrapper">
+                                <img id="pageImage" alt="Page" />
+                                <canvas id="overlayCanvas"></canvas>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Right panel: detections -->
+                    <aside class="right-panel">
+                        <div class="right-header">
+                            <h3>Detections</h3>
+                            <div class="toggle-group">
+                                <label class="toggle-label">
+                                    <input type="checkbox" id="toggleSignature" checked>
+                                    <span>Signatures</span>
+                                </label>
+                                <label class="toggle-label">
+                                    <input type="checkbox" id="toggleStamp" checked>
+                                    <span>Stamps</span>
+                                </label>
+                                <label class="toggle-label">
+                                    <input type="checkbox" id="toggleQR" checked>
+                                    <span>QR Codes</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div id="detectionsList" class="detections-list"></div>
+                    </aside>
                 </div>
             </section>
 
@@ -73,6 +94,10 @@
         </main>
     </div>
 
+    <script src="/static/js/processModelOutput.js"></script>
+    <script src="/static/js/DetectionFormatter.js"></script>
+    <script src="/static/js/PageRenderer.js"></script>
+    <script src="/static/js/FileUploadHandler.js"></script>
     <script src="/static/app.js"></script>
 </body>
 </html>
